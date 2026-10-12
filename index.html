@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Accra Vibes — Alpha 0.9</title>
+<title>Accra Vibes — Alpha 1.0</title>
 <style>
 *{box-sizing:border-box}body{margin:0;overflow:hidden;background:#a8d9ee;font-family:system-ui,sans-serif;color:#fff}canvas{display:block}
 #ui{position:fixed;top:14px;left:14px;width:min(295px,66vw);background:#142437e8;padding:14px;border-radius:15px;z-index:3;box-shadow:0 10px 30px #0003}h1{margin:0;color:#ffd24f;font-size:23px}small{color:#c6d5e2}#wallet{font-size:24px;font-weight:bold;margin:8px 0}#mission{font-size:13px;margin:8px 0}
@@ -13,13 +13,15 @@
 
 #joystick{display:block;position:fixed;left:20px;bottom:25px;width:136px;height:136px;border-radius:50%;background:#203b53a9;border:3px solid #ffffff8c;z-index:5;touch-action:none;user-select:none}#stick{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:#ffda69;border:3px solid #fff8;pointer-events:none}#mobileDrive{display:none}@media(max-width:849px){#joystick,#mobileDrive{display:block}}@media(max-width:849px) and (orientation:landscape){#joystick{bottom:10px;width:110px;height:110px}#stick{left:30px;top:30px;width:44px;height:44px}#mobileAction{bottom:95px}#mobileDrive{bottom:15px}#ui{max-height:75vh}}
 </style></head><body>
-<div id="ui"><h1>🇬🇭 ACCRA VIBES</h1><small>OSU · ALPHA 0.9</small><div id="wallet"></div><div id="mission"></div>
+<div id="ui"><h1>🇬🇭 ACCRA VIBES</h1><small>OSU · ALPHA 1.0</small><div id="wallet"></div><div id="mission"></div>
 <div id="buttons"><button id="act">Interact [E]</button><button id="car"></button><button id="home"></button><button id="kiosk"></button><button id="reset">Reset</button></div><small id="stats"></small></div>
 <button id="sceneToggle">🌙 Night</button><div id="speedometer">0 km/h</div><div id="message">Welcome to Osu! Follow the orange pickup marker.</div><canvas id="mini" width="145" height="145"></canvas>
 <div id="help">Walk: WASD · Drive: W accelerate, S reverse/brake, A/D steer · E interact · F drive · Drag camera · Autosaves locally</div>
 <button id="mobileAction">ACT</button><div id="joystick"><div id="stick"></div></div><button id="mobileDrive">DRIVE</button>
 <script type="module">
 import * as THREE from 'https://esm.sh/three@0.170.0';
+import {GLTFLoader} from 'https://esm.sh/three@0.170.0/addons/loaders/GLTFLoader.js';
+import {clone as cloneSkeleton} from 'https://esm.sh/three@0.170.0/addons/utils/SkeletonUtils.js';
 const scene=new THREE.Scene();scene.background=new THREE.Color('#9dd4ec');scene.fog=new THREE.Fog('#9dd4ec',90,230);
 const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,400),renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));document.body.prepend(renderer.domElement);
@@ -78,6 +80,16 @@ for(let i=0;i<22;i++){const x=-96+(i%11)*19,z=i<11?43:-43;cube(x,3.5,z,.17,7,.17
 for(let i=0;i<24;i++){let x=Math.sin(i*8)*97,z=Math.cos(i*13)*97;if([-70,-35,0,35,70].some(a=>Math.abs(x-a)<10||Math.abs(z-a)<10))continue;cube(x,1,z,.5,2,.5,material('#765239'));const crown=new THREE.Mesh(new THREE.SphereGeometry(2,9,7),material('#338250'));crown.position.set(x,3,z);scene.add(crown)}
 const pedestrians=[];for(let i=0;i<26;i++){const g=new THREE.Group(),body=new THREE.Mesh(new THREE.CylinderGeometry(.37,.44,1.2,8),material(['#c95043','#2b8ca6','#eeae37','#e0d4ae'][i%4])),head=new THREE.Mesh(new THREE.SphereGeometry(.32,9,8),material(['#784f31','#ad7750','#583d2e'][i%3]));body.position.y=1.1;head.position.y=1.98;g.add(body,head);const left=new THREE.Mesh(new THREE.CapsuleGeometry(.11,.55,4,6),material(['#86553c','#b17b56','#68422e'][i%3]));left.position.set(-.52,1.2,0);const right=left.clone();right.position.x=.52;g.add(left,right);const legs=[];for(const side of [-1,1]){const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.12,.6,4,6),material('#263953'));leg.position.set(side*.2,.4,0);g.add(leg);legs.push(leg)}scene.add(g);pedestrians.push({g,arms:[left,right],legs,x:Math.sin(i*2.4)*83,z:Math.cos(i*3.5)*83,dir:i*.8,speed:.5+(i%4)*.25,phase:i*.8,behavior:i%5,chatCooldown:0})}
 for(let i=0;i<10;i++){let x=(i%5-2)*35+8,z=(i<5?-35:35)+8;cube(x,.8,z,2,1.1,3.5,material(['#efcc4c','#dbddd5','#b45045'][i%3]));cube(x,1.55,z,1.7,.6,2,material('#41667a'))}
+// Load a real rigged, animated humanoid; retain procedural avatars if offline.
+const mixers=[];let playerMixer=null,playerActions={},playerCurrent='',npcAnimated=[];
+const gltfLoader=new GLTFLoader();
+gltfLoader.load('https://threejs.org/examples/models/gltf/Soldier.glb',gltf=>{
+const clips=gltf.animations,find=(name)=>clips.find(c=>c.name.toLowerCase().includes(name));
+function attach(root,kind,seed=0){const avatar=cloneSkeleton(gltf.scene);avatar.scale.setScalar(1.5);avatar.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.material&&o.material.clone){o.material=o.material.clone();if(seed)o.material.color.offsetHSL(seed*.08,0,0)}}});root.add(avatar);const mixer=new THREE.AnimationMixer(avatar);mixers.push(mixer);const idle=find('idle'),walk=find('walk'),run=find('run');const actions={idle:idle?mixer.clipAction(idle):null,walk:walk?mixer.clipAction(walk):null,run:run?mixer.clipAction(run):null};if(actions.idle)actions.idle.play();return {avatar,mixer,actions,current:'idle'}}
+const visual=attach(player,'player');player.userData.visual=visual;player.children.forEach(o=>{if(o!==visual.avatar)o.visible=false});
+for(let i=0;i<pedestrians.length;i++){if(i%2!==0)continue;const p=pedestrians[i],v=attach(p.g,'npc',i%5);p.visual=v;p.g.children.forEach(o=>{if(o!==v.avatar)o.visible=false});npcAnimated.push(p)}
+},undefined,err=>console.warn('Animated character asset unavailable; keeping procedural characters',err));
+function playAnimation(v,name){if(!v||v.current===name)return;const next=v.actions[name]||v.actions.idle;if(!next)return;const previous=v.actions[v.current];next.reset().fadeIn(.22).play();if(previous&&previous!==next)previous.fadeOut(.22);v.current=name}
 const traffic=[];
 for(let i=0;i<12;i++){const van=i%3===0,g=new THREE.Group(),paint=material(van?'#f1d44c':i%2?'#efc849':'#e9e8df');
 const body=new THREE.Mesh(new THREE.BoxGeometry(van?2.7:2.1,van?2.15:1.1,van?5.7:4),paint);body.position.y=van?1.45:.85;g.add(body);
@@ -118,13 +130,13 @@ function frame(now){requestAnimationFrame(frame);const dt=Math.min((now-prev)/10
 if(driving){const throttle=-dz;carSpeed+=throttle*26*dt;carSpeed-=Math.sign(carSpeed)*Math.min(Math.abs(carSpeed),7*dt);carSpeed=THREE.MathUtils.clamp(carSpeed,-9,28);if(Math.abs(carSpeed)>.2)carHeading+=dx*dt*1.6*Math.sign(carSpeed)*Math.min(1,Math.abs(carSpeed)/7);state.x=THREE.MathUtils.clamp(state.x+Math.sin(carHeading)*carSpeed*dt,-102,102);state.z=THREE.MathUtils.clamp(state.z+Math.cos(carHeading)*carSpeed*dt,-102,102);vehicle.rotation.y=carHeading}else{carSpeed=0;if(dx||dz){state.x=THREE.MathUtils.clamp(state.x+dx*dt*7,-102,102);state.z=THREE.MathUtils.clamp(state.z+dz*dt*7,-102,102);player.rotation.y=Math.atan2(dx,dz)}}
 // Keep the avatar and vehicle outside building footprints.
 for(const b of solidBuildings){const ax=state.x-b.x,az=state.z-b.z;if(Math.abs(ax)<b.r&&Math.abs(az)<b.r){const pushX=b.r-Math.abs(ax),pushZ=b.r-Math.abs(az);if(pushX<pushZ)state.x=b.x+Math.sign(ax||1)*b.r;else state.z=b.z+Math.sign(az||1)*b.r}}
-walkPhase+=(driving?0:Math.hypot(dx,dz)*dt*10);for(const limb of limbs){limb.mesh.rotation.x=driving?0:Math.sin(walkPhase)*.5*limb.side*(limb.type==='arm'?-1:1)}
+walkPhase+=(driving?0:Math.hypot(dx,dz)*dt*10);playAnimation(player.userData.visual,(!driving&&Math.hypot(dx,dz)>.12)?'walk':'idle');for(const limb of limbs){limb.mesh.rotation.x=driving?0:Math.sin(walkPhase)*.5*limb.side*(limb.type==='arm'?-1:1)}
 player.position.set(state.x,0,state.z);player.visible=!driving;document.getElementById('speedometer').style.display=driving?'block':'none';if(driving)document.getElementById('speedometer').textContent=Math.round(Math.abs(carSpeed)*5)+' km/h';vehicle.position.set(state.x,0,state.z);vehicle.visible=driving;
 for(const t of traffic){t.t+=t.speed*dt;if(t.t>108)t.t=-108;if(t.axis===0){t.g.position.set(t.road+t.side*2.5,0,t.t);t.g.rotation.y=0}else{t.g.position.set(t.t,0,t.road+t.side*2.5);t.g.rotation.y=Math.PI/2}}
-for(let p of pedestrians){p.chatCooldown=Math.max(0,p.chatCooldown-dt);const walking=p.chatCooldown===0&&p.behavior!==4;const speed=walking?p.speed:0;p.x+=Math.sin(p.dir)*speed*dt;p.z+=Math.cos(p.dir)*speed*dt;for(let k=0;k<2;k++){p.legs[k].rotation.x=walking?Math.sin(now*.005+p.phase)*.55*(k?1:-1):0;p.arms[k].rotation.x=walking?Math.sin(now*.005+p.phase)*.45*(k?-1:1):p.chatCooldown>0?-.3:0}if(p.behavior===3&&Math.sin(now*.0007+p.phase)>.97)p.dir+=dt*.6;if(Math.abs(p.x)>95||Math.abs(p.z)>95)p.dir+=Math.PI;p.g.position.set(p.x,0,p.z);p.g.rotation.y=p.dir;p.g.position.y=.055*Math.sin(now*.006+p.phase)}
+for(let p of pedestrians){p.chatCooldown=Math.max(0,p.chatCooldown-dt);const walking=p.chatCooldown===0&&p.behavior!==4;playAnimation(p.visual,walking?'walk':'idle');const speed=walking?p.speed:0;p.x+=Math.sin(p.dir)*speed*dt;p.z+=Math.cos(p.dir)*speed*dt;for(let k=0;k<2;k++){p.legs[k].rotation.x=walking?Math.sin(now*.005+p.phase)*.55*(k?1:-1):0;p.arms[k].rotation.x=walking?Math.sin(now*.005+p.phase)*.45*(k?-1:1):p.chatCooldown>0?-.3:0}if(p.behavior===3&&Math.sin(now*.0007+p.phase)>.97)p.dir+=dt*.6;if(Math.abs(p.x)>95||Math.abs(p.z)>95)p.dir+=Math.PI;p.g.position.set(p.x,0,p.z);p.g.rotation.y=p.dir;p.g.position.y=.055*Math.sin(now*.006+p.phase)}
 const target=new THREE.Vector3(state.x+(driving?21:13)*Math.sin(orbit),driving?10:7,state.z+(driving?21:13)*Math.cos(orbit));camera.position.lerp(target,.11);camera.lookAt(state.x,1.4,state.z);markers.forEach((p,i)=>p.obj.position.set(p.x,.3+.12*Math.sin(now*.003+i),p.z));
 const c=$('mini'),ctx=c.getContext('2d');ctx.clearRect(0,0,145,145);ctx.fillStyle='#578363';ctx.fillRect(0,0,145,145);ctx.strokeStyle='#b8b49f';ctx.lineWidth=6;for(let a=-70;a<=70;a+=35){const v=(a+105)/210*145;ctx.beginPath();ctx.moveTo(v,0);ctx.lineTo(v,145);ctx.moveTo(0,v);ctx.lineTo(145,v);ctx.stroke()}for(const p of markers){ctx.fillStyle=p.col;ctx.beginPath();ctx.arc((p.x+105)/210*145,(p.z+105)/210*145,5,0,7);ctx.fill()}ctx.fillStyle='#fff';ctx.beginPath();ctx.arc((state.x+105)/210*145,(state.z+105)/210*145,4,0,7);ctx.fill();
-persist+=dt;if(persist>3){save();persist=0}renderer.render(scene,camera)}
+for(const mixer of mixers)mixer.update(dt);persist+=dt;if(persist>3){save();persist=0}renderer.render(scene,camera)}
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 renderHud();requestAnimationFrame(frame);
 </script></body></html>
