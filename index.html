@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Accra Vibes — Alpha 0.7</title>
+<title>Accra Vibes — Alpha 0.8</title>
 <style>
 *{box-sizing:border-box}body{margin:0;overflow:hidden;background:#a8d9ee;font-family:system-ui,sans-serif;color:#fff}canvas{display:block}
 #ui{position:fixed;top:14px;left:14px;width:min(295px,66vw);background:#142437e8;padding:14px;border-radius:15px;z-index:3;box-shadow:0 10px 30px #0003}h1{margin:0;color:#ffd24f;font-size:23px}small{color:#c6d5e2}#wallet{font-size:24px;font-weight:bold;margin:8px 0}#mission{font-size:13px;margin:8px 0}
 #buttons{display:grid;grid-template-columns:1fr 1fr;gap:5px}button{cursor:pointer;border:0;background:#ffd04c;border-radius:8px;padding:9px 5px;color:#182333;font-weight:750}button:active{filter:brightness(.88)}
-#message{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#18293fe8;border-radius:11px;padding:10px 14px;z-index:4;max-width:40vw;text-align:center;font-size:13px}
+#sceneToggle{position:fixed;right:16px;top:174px;z-index:6;background:#23394ddd;color:#ffe4a0;padding:9px 12px;border:1px solid #ffffff55}#speedometer{position:fixed;right:16px;bottom:196px;z-index:5;background:#18293fdd;border-radius:12px;padding:8px 12px;font-size:17px;font-weight:800;display:none}@media(max-width:849px){#sceneToggle{top:130px;right:14px}#speedometer{bottom:203px;right:16px}}#message{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#18293fe8;border-radius:11px;padding:10px 14px;z-index:4;max-width:40vw;text-align:center;font-size:13px}
 #mini{position:fixed;top:15px;right:15px;width:145px;height:145px;background:#365c52;border:3px solid #fff8;border-radius:12px;z-index:2}
 #help{position:fixed;bottom:15px;left:180px;background:#172c40d9;padding:9px;border-radius:9px;font-size:12px;z-index:2}
 #pad{position:fixed;right:16px;bottom:18px;z-index:5;display:grid;grid-template-columns:repeat(3,58px);gap:6px;touch-action:none;user-select:none}#pad button{height:58px;font-size:23px;background:#fffde;touch-action:none}#pad span{width:58px}#mobileAction{display:none}
@@ -13,9 +13,9 @@
 
 #joystick{display:block;position:fixed;left:20px;bottom:25px;width:136px;height:136px;border-radius:50%;background:#203b53a9;border:3px solid #ffffff8c;z-index:5;touch-action:none;user-select:none}#stick{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:#ffda69;border:3px solid #fff8;pointer-events:none}#mobileDrive{display:none}@media(max-width:849px){#joystick,#mobileDrive{display:block}}@media(max-width:849px) and (orientation:landscape){#joystick{bottom:10px;width:110px;height:110px}#stick{left:30px;top:30px;width:44px;height:44px}#mobileAction{bottom:95px}#mobileDrive{bottom:15px}#ui{max-height:75vh}}
 </style></head><body>
-<div id="ui"><h1>🇬🇭 ACCRA VIBES</h1><small>OSU · ALPHA 0.7</small><div id="wallet"></div><div id="mission"></div>
+<div id="ui"><h1>🇬🇭 ACCRA VIBES</h1><small>OSU · ALPHA 0.8</small><div id="wallet"></div><div id="mission"></div>
 <div id="buttons"><button id="act">Interact [E]</button><button id="car"></button><button id="home"></button><button id="kiosk"></button><button id="reset">Reset</button></div><small id="stats"></small></div>
-<div id="message">Welcome to Osu! Follow the orange pickup marker.</div><canvas id="mini" width="145" height="145"></canvas>
+<button id="sceneToggle">🌙 Night</button><div id="speedometer">0 km/h</div><div id="message">Welcome to Osu! Follow the orange pickup marker.</div><canvas id="mini" width="145" height="145"></canvas>
 <div id="help">Walk: WASD · Drive: W accelerate, S reverse/brake, A/D steer · E interact · F drive · Drag camera · Autosaves locally</div>
 <button id="mobileAction">ACT</button><div id="joystick"><div id="stick"></div></div><button id="mobileDrive">DRIVE</button>
 <script type="module">
@@ -25,6 +25,11 @@ const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,400),rende
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));document.body.prepend(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xffffff,0x6d7f61,2.3));const sun=new THREE.DirectionalLight(0xffebbb,2.2);sun.position.set(40,75,20);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-115;sun.shadow.camera.right=115;sun.shadow.camera.top=115;sun.shadow.camera.bottom=-115;sun.shadow.normalBias=.03;scene.add(sun);
 const material=c=>new THREE.MeshLambertMaterial({color:c});
+const glassMat=new THREE.MeshPhongMaterial({color:'#2d5266',shininess:85,specular:'#a3d6f3'});
+const lampMat=new THREE.MeshBasicMaterial({color:'#fff0ad'});
+let night=false;const originalSky=new THREE.Color('#9dd4ec');
+function switchLighting(){night=!night;scene.background.set(night?'#162940':'#9dd4ec');scene.fog.color.set(night?'#162940':'#9dd4ec');sun.intensity=night?.22:2.2;scene.children.forEach(o=>{if(o.isHemisphereLight)o.intensity=night?.8:2.3});document.getElementById('sceneToggle').textContent=night?'☀️ Day':'🌙 Night'}
+document.getElementById('sceneToggle').onclick=switchLighting;
 function cube(x,y,z,w,h,d,m){const obj=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);obj.position.set(x,y,z);obj.castShadow=h>1;obj.receiveShadow=true;scene.add(obj);return obj}
 cube(0,-.3,0,220,.55,220,material('#76a66d'));
 const street=material('#434b55'),lane=material('#ebd995'),pavement=material('#c4b9a2');
@@ -35,7 +40,7 @@ for(let b=-100;b<100;b+=12){cube(a,.08,b,.25,.02,5,lane);cube(b,.08,a,5,.02,.25,
 const solidBuildings=[];const facade=['#edb18c','#f1ca8b','#86b3b6','#dc989b','#e5dcc4'];
 for(let x=-92;x<=92;x+=16)for(let z=-92;z<=92;z+=16){if([-70,-35,0,35,70].some(a=>Math.abs(x-a)<12||Math.abs(z-a)<12))continue;
 let h=6+Math.abs(Math.sin(x*1.7+z*.9))*12;cube(x,h/2,z,10,h,10,material(facade[Math.abs(Math.round(x+z))%5]));solidBuildings.push({x,z,r:6.5});
-cube(x,h+.2,z,11,.5,11,material('#a35d4b'));for(let y=3;y<h;y+=3)cube(x,y,z+5.08,6,.8,.15,material('#456a83'))}
+cube(x,h+.2,z,11,.5,11,material('#a35d4b'));for(let y=3;y<h;y+=3){for(let wx=-3;wx<=3;wx+=3){cube(x+wx,y,z+5.09,1.5,1.4,.13,glassMat);cube(x+wx,y,z-5.09,1.5,1.4,.13,glassMat)}}cube(x,1.55,z+5.15,2,3,.16,material('#61412d'));cube(x,3.2,z+5.65,9,.3,2,material('#a65745'))}
 function sign(txt,x,z){const c=document.createElement('canvas');c.width=512;c.height=96;const ctx=c.getContext('2d');ctx.fillStyle='#13273c';ctx.fillRect(0,0,512,96);ctx.fillStyle='#ffd04c';ctx.font='bold 38px sans-serif';ctx.textAlign='center';ctx.fillText(txt,256,63);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c)}));s.position.set(x,7,z);s.scale.set(16,3,1);scene.add(s)}
 sign('OSU • OXFORD ST',0,-7);sign('CHOP BAR',-19,-19);sign('ACCRA VIBES KIOSK',52,17);sign('APARTMENTS',-53,17);sign('WELCOME TO OSU',0,53);sign('WAKEY WAKEY CHOP BAR',-52,-54);sign('ACCRA TAXI RANK',42,-53);
 const accents=['#d9a51e','#d33b35','#248a52','#ece5d2'];
@@ -57,6 +62,12 @@ const cabin=new THREE.Mesh(new THREE.BoxGeometry(van?2.45:1.8,van?.95:.65,van?3.
 for(const side of [-1,1])for(const end of [-1,1]){const tire=new THREE.Mesh(new THREE.CylinderGeometry(.43,.43,.28,10),material('#23262c'));tire.rotation.z=Math.PI/2;tire.position.set(side*(van?1.4:1.05),.48,end*(van?1.9:1.25));g.add(tire)}
 g.traverse(o=>{if(o.isMesh)o.castShadow=true});scene.add(g);
 traffic.push({g,axis:i%2,road:[-70,-35,0,35,70][i%5],t:-92+i*16,speed:5+(i%4)*2,side:i%2?1:-1})}
+// Distinctive urban landmarks (fictionalized, not geographically positioned).
+const arch=material('#e8d9ba');
+for(const x of [-5.5,5.5])cube(x,6,-89,1.3,12,1.4,arch);
+cube(0,12.2,-89,12.4,1.4,1.8,arch);sign('OSU — ACCRA',0,-89);
+const court=material('#547d61');cube(85,.06,0,18,.12,20,court);
+for(const x of [78,92])for(const z of [-8,8])cube(x,2.5,z,.18,5,.18,material('#eee9dc'));
 const player=new THREE.Group();const torso=new THREE.Mesh(new THREE.CylinderGeometry(.45,.52,1.4,9),material('#ffbd36'));torso.position.y=1.3;const head=new THREE.Mesh(new THREE.SphereGeometry(.38,12,9),material('#885838'));head.position.y=2.35;player.add(torso,head);
 const armMat=material('#885838'),shoeMat=material('#252a38'),limbs=[];
 for(const side of [-1,1]){const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.15,.7,4,6),armMat);arm.position.set(side*.65,1.25,0);arm.rotation.z=side*.12;player.add(arm);limbs.push({mesh:arm,side,type:'arm'});const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.17,.65,4,6),material('#243b69'));leg.position.set(side*.24,.42,0);player.add(leg);limbs.push({mesh:leg,side,type:'leg'});const shoe=new THREE.Mesh(new THREE.BoxGeometry(.4,.2,.65),shoeMat);shoe.position.set(side*.24,.15,-.12);player.add(shoe)}
@@ -85,7 +96,7 @@ if(driving){const throttle=-dz;carSpeed+=throttle*26*dt;carSpeed-=Math.sign(carS
 // Keep the avatar and vehicle outside building footprints.
 for(const b of solidBuildings){const ax=state.x-b.x,az=state.z-b.z;if(Math.abs(ax)<b.r&&Math.abs(az)<b.r){const pushX=b.r-Math.abs(ax),pushZ=b.r-Math.abs(az);if(pushX<pushZ)state.x=b.x+Math.sign(ax||1)*b.r;else state.z=b.z+Math.sign(az||1)*b.r}}
 walkPhase+=(driving?0:Math.hypot(dx,dz)*dt*10);for(const limb of limbs){limb.mesh.rotation.x=driving?0:Math.sin(walkPhase)*.5*limb.side*(limb.type==='arm'?-1:1)}
-player.position.set(state.x,0,state.z);player.visible=!driving;vehicle.position.set(state.x,0,state.z);vehicle.visible=driving;
+player.position.set(state.x,0,state.z);player.visible=!driving;document.getElementById('speedometer').style.display=driving?'block':'none';if(driving)document.getElementById('speedometer').textContent=Math.round(Math.abs(carSpeed)*5)+' km/h';vehicle.position.set(state.x,0,state.z);vehicle.visible=driving;
 for(const t of traffic){t.t+=t.speed*dt;if(t.t>108)t.t=-108;if(t.axis===0){t.g.position.set(t.road+t.side*2.5,0,t.t);t.g.rotation.y=0}else{t.g.position.set(t.t,0,t.road+t.side*2.5);t.g.rotation.y=Math.PI/2}}
 for(let p of pedestrians){p.x+=Math.sin(p.dir)*p.speed*dt;p.z+=Math.cos(p.dir)*p.speed*dt;if(Math.abs(p.x)>95||Math.abs(p.z)>95)p.dir+=Math.PI;p.g.position.set(p.x,0,p.z);p.g.rotation.y=p.dir;p.g.position.y=.055*Math.sin(now*.006+p.phase)}
 const target=new THREE.Vector3(state.x+(driving?21:13)*Math.sin(orbit),driving?10:7,state.z+(driving?21:13)*Math.cos(orbit));camera.position.lerp(target,.11);camera.lookAt(state.x,1.4,state.z);markers.forEach((p,i)=>p.obj.position.set(p.x,.3+.12*Math.sin(now*.003+i),p.z));
