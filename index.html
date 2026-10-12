@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Accra Vibes — Alpha 1.5.5</title>
+<title>Accra Vibes — Alpha 1.5.6</title>
 <style>
 *{box-sizing:border-box}body{margin:0;overflow:hidden;background:#a8d9ee;font-family:system-ui,sans-serif;color:#fff}canvas{display:block}
 #ui{position:fixed;top:14px;left:14px;width:min(295px,66vw);background:#142437e8;padding:14px;border-radius:15px;z-index:3;box-shadow:0 10px 30px #0003}h1{margin:0;color:#ffd24f;font-size:23px}small{color:#c6d5e2}#wallet{font-size:24px;font-weight:bold;margin:8px 0}#mission{font-size:13px;margin:8px 0}
@@ -14,7 +14,7 @@
 #joystick{display:block;position:fixed;left:20px;bottom:25px;width:136px;height:136px;border-radius:50%;background:#203b53a9;border:3px solid #ffffff8c;z-index:5;touch-action:none;user-select:none}#stick{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:#ffda69;border:3px solid #fff8;pointer-events:none}#mobileDrive{display:none}@media(max-width:849px){#joystick,#mobileDrive{display:block}}@media(max-width:849px) and (orientation:landscape){#joystick{bottom:10px;width:110px;height:110px}#stick{left:30px;top:30px;width:44px;height:44px}#mobileAction{bottom:95px}#mobileDrive{bottom:15px}#ui{max-height:75vh}}
 #sprintBtn{position:fixed;right:100px;bottom:122px;z-index:7;display:none;background:#ffe09a}#sprintBtn.active{background:#65dfac}@media(max-width:849px){#sprintBtn{display:block}}#graphicsBtn{position:fixed;right:15px;top:215px;z-index:8;background:#d8f4e9;color:#143b30}@media(max-width:849px){#graphicsBtn{top:168px}}#avatarPanel{display:none;position:fixed;z-index:12;top:50%;left:50%;transform:translate(-50%,-50%);width:min(390px,92vw);max-height:85vh;overflow:auto;background:#17283cf5;border:1px solid #ffffff50;border-radius:18px;padding:20px;box-shadow:0 20px 80px #000a}#avatarPanel.open{display:block}#avatarPanel h2{margin:0 0 12px;color:#ffd04c}#avatarPanel label{display:block;margin:12px 0 4px;font-size:13px}#avatarPanel select{width:100%;padding:10px;border-radius:8px;background:#e9eff4;color:#16283d;border:0}#avatarPanel .row{display:flex;gap:8px;margin-top:18px}#avatarPanel .row button{flex:1}#avatarPanel .hint{color:#c8d7e4;font-size:12px;line-height:1.5}
 </style></head><body>
-<div id="ui"><h1>🇬🇭 ACCRA VIBES</h1><small>OSU · ALPHA 1.5.5</small><div id="wallet"></div><div id="mission"></div>
+<div id="ui"><h1>🇬🇭 ACCRA VIBES</h1><small>OSU · ALPHA 1.5.6</small><div id="wallet"></div><div id="mission"></div>
 <div id="buttons"><button id="act">Interact [E]</button><button id="car"></button><button id="home"></button><button id="kiosk"></button><button id="avatarBtn">Customize</button><button id="reset">Reset</button></div><small id="stats"></small></div>
 <section id="avatarPanel" role="dialog" aria-label="Customize character"><h2>Customize your character</h2><p class="hint">Your appearance is saved on this device. More hairstyles and realistic clothing assets will be added as they become available.</p><label for="skinChoice">Skin tone</label><select id="skinChoice"><option value="deep">Deep brown</option><option value="brown">Rich brown</option><option value="medium">Medium brown</option><option value="light">Light brown</option></select><label for="outfitChoice">Outfit colour</label><select id="outfitChoice"><option value="gold">Golden yellow</option><option value="blue">Ocean blue</option><option value="red">Terracotta red</option><option value="green">Forest green</option><option value="white">Cream white</option></select><label for="hairChoice">Hairstyle</label><select id="hairChoice"><option value="short">Short natural</option><option value="fade">Low fade</option><option value="afro">Rounded afro</option><option value="bald">Bald</option></select><div class="row"><button id="saveAvatar">Save appearance</button><button id="closeAvatar">Close</button></div></section><button id="graphicsBtn" aria-pressed="false">Safe graphics: OFF</button><button id="sceneToggle">🌙 Night</button><div id="speedometer">0 km/h</div><div id="message">Welcome to Osu! Follow the orange pickup marker.</div><canvas id="mini" width="145" height="145"></canvas>
 <div id="help">Walk: WASD · Run: Shift or R · Drive: W accelerate, S reverse/brake, A/D steer · E interact · F drive · Drag camera · Autosaves locally</div>
@@ -112,9 +112,7 @@ for(let i=0;i<pedestrians.length;i++){if(i%2!==0)continue;const p=pedestrians[i]
 }
 // Load the locally hosted, CC0-licensed rigged human asset after city startup.
 // Retain procedural figures if model loading fails, and preserve camera collision handling.
-if(new URLSearchParams(location.search).get('characterModel')==='1'){
-  setTimeout(()=>initializeCharacters().then(()=>console.info('Accra Vibes: character assets loaded')).catch(err=>console.warn('Character asset loading failed; fallback remains',err)),1200);
-}else{console.info('Accra Vibes: character model disabled for isolation test; use ?characterModel=1 to compare')}
+console.info('Accra Vibes: defective imported character retired; stable procedural character active.');
 
 function playAnimation(v,name){if(!v||v.current===name)return;const next=v.actions[name]||v.actions.walk||v.actions.idle;if(!next)return;const previous=v.actions[v.current];next.reset().fadeIn(.22).play();if(previous&&previous!==next)previous.fadeOut(.22);v.current=name}
 const traffic=[];
