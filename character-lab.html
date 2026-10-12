@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Accra Vibes | Ohemaa Character Lab</title><style>body{margin:0;background:#10151c;color:#f1f5f9;font:15px system-ui}#info{position:absolute;top:14px;left:14px;max-width:350px;background:#111b28e8;padding:18px;border-radius:14px}h1{margin:0 0 6px;font-size:21px}p{line-height:1.45;color:#cbd5e1}button{padding:10px 13px;background:#d6aa52;color:#111;border:0;border-radius:8px;font-weight:700;cursor:pointer}#stats{white-space:pre-wrap;font:12px/1.6 monospace}#hint{position:absolute;bottom:15px;left:15px;color:#e2e8f0}</style></head><body><div id="info"><h1>Accra Vibes — Ohemaa Character Lab</h1><p>Isolated model inspection. Alpha 1.6.2: inspect realistic CC0 candidate assets without altering the stable game. Use the GLB importer for offline validation.</p><label style="display:block;margin-bottom:12px">Load candidate GLB: <input id="modelFile" type="file" accept=".glb,model/gltf-binary" style="max-width:100%"></label><button id="toggle">Pause rotation</button> <button id="reset">Reset camera</button><p style="font-size:13px"><strong>New character brief: Ohemaa.</strong> A realistic Ghanaian woman with natural facial features, detailed skin and hair, modern Accra-inspired clothing, and properly rigged idle, walking and running animations. The previously proposed Sam asset has been rejected. No female 3D asset has been imported yet.</p><p id="stats">Loading model…</p><div id="animations"></div></div><div id="hint">Drag to rotate · Scroll/pinch to zoom</div><script type="module">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Accra Vibes | Ohemaa Character Lab</title><style>body{margin:0;background:#10151c;color:#f1f5f9;font:15px system-ui}#info{position:absolute;top:14px;left:14px;max-width:350px;background:#111b28e8;padding:18px;border-radius:14px}h1{margin:0 0 6px;font-size:21px}p{line-height:1.45;color:#cbd5e1}button{padding:10px 13px;background:#d6aa52;color:#111;border:0;border-radius:8px;font-weight:700;cursor:pointer}#stats{white-space:pre-wrap;font:12px/1.6 monospace}#hint{position:absolute;bottom:15px;left:15px;color:#e2e8f0}</style></head><body><div id="info"><h1>Accra Vibes — Ohemaa Character Lab</h1><p>Alpha 1.6.4: interactive Ohemaa body-and-outfit prototype. This is a geometry and animation study, not a photorealistic likeness. The live game is unchanged.</p><label style="display:block;margin-bottom:12px">Load candidate GLB: <input id="modelFile" type="file" accept=".glb,model/gltf-binary" style="max-width:100%"></label><button id="idle">Idle</button> <button id="walk">Walk</button> <button id="run">Run</button> <button id="toggle">Pause rotation</button> <button id="reset">Reset camera</button><p style="font-size:13px"><strong>New character brief: Ohemaa.</strong> A realistic Ghanaian woman with natural facial features, detailed skin and hair, modern Accra-inspired clothing, and properly rigged idle, walking and running animations. The previously proposed Sam asset has been rejected. No female 3D asset has been imported yet.</p><p id="stats">Loading model…</p><div id="animations"></div></div><div id="hint">Drag to rotate · Scroll/pinch to zoom</div><script type="module">
 import * as THREE from 'https://esm.sh/three@0.170.0';
 import {GLTFLoader} from 'https://esm.sh/three@0.170.0/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'https://esm.sh/three@0.170.0/addons/controls/OrbitControls.js';
@@ -6,13 +6,13 @@ const scene=new THREE.Scene();scene.background=new THREE.Color('#192331');scene.
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.appendChild(renderer.domElement);
 const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.05,150);camera.position.set(4,3.3,6);const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,1.25,0);controls.enableDamping=true;controls.minDistance=2;controls.maxDistance=20;
 const floor=new THREE.Mesh(new THREE.CircleGeometry(12,64),new THREE.MeshStandardMaterial({color:0x344354,roughness:1}));floor.rotation.x=-Math.PI/2;scene.add(floor);scene.add(new THREE.GridHelper(12,24,0x8290a0,0x536172));const axes=new THREE.AxesHelper(1);scene.add(axes);
-let rotating=true,avatar=null,boundsHelper=null,mixer=null,actions=[];document.getElementById('toggle').onclick=()=>{rotating=!rotating;document.getElementById('toggle').textContent=rotating?'Pause rotation':'Resume rotation'};document.getElementById('reset').onclick=()=>{camera.position.set(4,3.3,6);controls.target.set(0,1.25,0);controls.update()};
+let rotating=true,avatar=null,boundsHelper=null,mixer=null,actions=[],prototype=null,motion="idle",elapsed=0;document.getElementById('toggle').onclick=()=>{rotating=!rotating;document.getElementById('toggle').textContent=rotating?'Pause rotation':'Resume rotation'};document.getElementById('reset').onclick=()=>{camera.position.set(4,3.3,6);controls.target.set(0,1.25,0);controls.update()};
 const stats=document.getElementById('stats');
 function showModel(g,name){
 if(avatar){scene.remove(avatar);avatar.traverse(o=>{if(o.isMesh){o.geometry?.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){if(m&&m.userData?.labOwned)m.dispose()}}})}
 if(boundsHelper){scene.remove(boundsHelper);boundsHelper.geometry.dispose();boundsHelper.material.dispose()}
 if(mixer){mixer.stopAllAction();mixer.uncacheRoot(avatar);mixer=null}
-avatar=g.scene;const raw=new THREE.Box3().setFromObject(avatar),size=raw.getSize(new THREE.Vector3()),center=raw.getCenter(new THREE.Vector3());
+prototype=null;avatar=g.scene;const raw=new THREE.Box3().setFromObject(avatar),size=raw.getSize(new THREE.Vector3()),center=raw.getCenter(new THREE.Vector3());
 if(!Number.isFinite(size.y)||size.y<=0){stats.textContent='FAIL: Invalid model bounds';avatar=null;return}
 const scale=2.55/size.y;avatar.scale.setScalar(scale);avatar.position.set(-center.x*scale,-raw.min.y*scale,-center.z*scale);scene.add(avatar);
 const bounds=new THREE.Box3().setFromObject(avatar),dims=bounds.getSize(new THREE.Vector3());boundsHelper=new THREE.Box3Helper(bounds,0xf8cf63);scene.add(boundsHelper);
@@ -29,7 +29,62 @@ if(verts>120000)warnings.push('High geometry cost for mobile: create a lower-det
 const clipNames=g.animations.map(c=>c.name);
 stats.textContent='ASSET: '+name+'\n'+(warnings.length?'REVIEW REQUIRED':'BASIC TECHNICAL CHECKS PASSED')+'\nHeight / width / depth: '+dims.y.toFixed(2)+' / '+dims.x.toFixed(2)+' / '+dims.z.toFixed(2)+' m\nMeshes: '+meshes+' | vertices: '+verts+'\nSkinned meshes: '+skinned+' | bones: '+bones+'\nMaterials: '+materials+' | texture maps: '+textures+'\nAnimations: '+(clipNames.join(', ')||'none')+'\n\n'+(warnings.length?'ISSUES:\n• '+warnings.join('\n• '):'Geometry looks technically plausible. Visual quality still needs manual review.');
 const animBox=document.getElementById('animations');animBox.replaceChildren();if(g.animations.length){mixer=new THREE.AnimationMixer(avatar);for(const clip of g.animations){const btn=document.createElement('button');btn.textContent=clip.name;btn.style.margin='4px';btn.onclick=()=>{mixer.stopAllAction();mixer.clipAction(clip).reset().play()};animBox.appendChild(btn)}}}
-const loader=new GLTFLoader();loader.load('/assets/characters/player.glb',g=>showModel(g,'Previous rejected model (reference)'),undefined,e=>stats.textContent='Model load failed: '+e.message);
+
+// Ohemaa prototype: intentionally original geometry, separate from rejected imported GLB.
+// A high-resolution textured likeness will replace this block after asset production.
+function makeOhemaa(){
+ const root=new THREE.Group(),rig=new THREE.Group();root.add(rig);
+ const skin=new THREE.MeshStandardMaterial({color:0x72462f,roughness:.84});
+ const cloth=new THREE.MeshStandardMaterial({color:0x17191e,roughness:.93});
+ const hairMat=new THREE.MeshStandardMaterial({color:0x201713,roughness:.87});
+ const honey=new THREE.MeshStandardMaterial({color:0x9b6136,roughness:.82});
+ const white=new THREE.MeshStandardMaterial({color:0xe7e8e2,roughness:.7});
+ const gold=new THREE.MeshStandardMaterial({color:0xbba05c,metalness:.68,roughness:.29});
+ function ell(parent,mat,x,y,z,sx,sy,sz){const o=new THREE.Mesh(new THREE.SphereGeometry(1,20,14),mat);o.position.set(x,y,z);o.scale.set(sx,sy,sz);parent.add(o);return o}
+ function limb(parent,mat,r1,r2,length,x,y,z){const o=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,length,14),mat);o.position.set(x,y,z);parent.add(o);return o}
+ function stripe(parent,pts){const curve=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(...p)));const m=new THREE.Mesh(new THREE.TubeGeometry(curve,24,.009,6,false),white);parent.add(m)}
+ // 2.55 metre reference-scale stylized mannequin, normalized after construction.
+ ell(rig,cloth,0,1.52,0,.36,.48,.235);ell(rig,cloth,0,1.13,0,.39,.21,.24);
+ ell(rig,skin,0,2.13,0,.105,.14,.105);
+ ell(rig,skin,0,2.38,.025,.195,.255,.178);
+ ell(rig,hairMat,0,2.55,-.035,.208,.11,.19);
+ ell(rig,hairMat,0,2.35,-.16,.21,.2,.105);
+ // Hair swept over shoulder, dark roots and caramel ends.
+ ell(rig,hairMat,.23,2.22,-.06,.085,.33,.085);
+ ell(rig,honey,.25,1.72,.015,.095,.46,.085);
+ for(const side of [-1,1]){
+  const arm=new THREE.Group();arm.position.set(side*.34,1.87,0);rig.add(arm);
+  ell(arm,cloth,side*.055,-.105,0,.15,.22,.16);
+  limb(arm,skin,.112,.09,.52,side*.085,-.42,0);
+  ell(arm,skin,side*.085,-.73,.025,.092,.15,.075);
+  const leg=new THREE.Group();leg.position.set(side*.20,1.10,0);rig.add(leg);
+  limb(leg,cloth,.205,.235,.94,0,-.49,0);
+  ell(leg,white,0,-.99,.105,.195,.105,.30);
+  if(side===1){ell(arm,gold,side*.085,-.66,0,.101,.025,.103)}
+  if(side===-1){ell(arm,gold,side*.085,-.72,0,.04,.02,.04)}
+  if(side===1){stripe(rig,[[.31,1.9,.16],[.36,1.55,.20],[.25,1.17,.23],[.20,.6,.24],[.2,.13,.26]])}
+  rig.userData[side===-1?'leftLeg':'rightLeg']=leg;
+  rig.userData[side===-1?'leftArm':'rightArm']=arm;
+ }
+ stripe(rig,[[-.3,1.93,.14],[-.32,1.67,.2],[0,1.42,.235],[.3,1.49,.21]]);
+ stripe(rig,[[-.34,1.8,.1],[-.34,1.49,.18]]);
+ ell(rig,gold,0,2.02,.16,.13,.013,.13);
+ root.scale.setScalar(1);
+ return root;
+}
+function showPrototype(){
+ if(avatar)scene.remove(avatar);
+ if(boundsHelper){scene.remove(boundsHelper);boundsHelper.geometry.dispose();boundsHelper.material.dispose();boundsHelper=null}
+ if(mixer){mixer.stopAllAction();mixer=null}
+ avatar=makeOhemaa();prototype=avatar;scene.add(avatar);
+ stats.textContent='OHEMAA — ALPHA 1.6.4\nPlayable-character geometry study\nReference: supplied full-body and face photos\nAppearance: black jumpsuit, white trim, ombré hair\nMotion: idle / walk / run (procedural test)\n\nNOT YET: photorealistic face, scanned textures, production rig, GLB export.\n\nThis test does not modify the main game.';
+ document.getElementById('animations').replaceChildren();
+}
+document.getElementById('idle').onclick=()=>motion='idle';
+document.getElementById('walk').onclick=()=>motion='walk';
+document.getElementById('run').onclick=()=>motion='run';
+showPrototype();
+
 document.getElementById('modelFile').addEventListener('change',e=>{const file=e.target.files?.[0];if(!file)return;if(!file.name.toLowerCase().endsWith('.glb')){stats.textContent='Please choose a .glb file';return}const url=URL.createObjectURL(file);loader.load(url,g=>{URL.revokeObjectURL(url);showModel(g,file.name)},undefined,err=>{URL.revokeObjectURL(url);stats.textContent='Import failed: '+err.message})});
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});let last=performance.now();function frame(now){requestAnimationFrame(frame);const dt=Math.min((now-last)/1000,.05);if(avatar&&rotating)avatar.rotation.y+=dt*.3;if(mixer)mixer.update(dt);last=now;controls.update();renderer.render(scene,camera)}requestAnimationFrame(frame);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});let last=performance.now();function frame(now){requestAnimationFrame(frame);const dt=Math.min((now-last)/1000,.05);if(avatar&&rotating)avatar.rotation.y+=dt*.3;if(prototype&&avatar===prototype){elapsed+=dt;const speed=motion==="run"?10:motion==="walk"?5:0,amp=motion==="run"?.65:motion==="walk"?.4:0;const l=avatar.children[0].userData;l.leftLeg.rotation.x=Math.sin(elapsed*speed)*amp;l.rightLeg.rotation.x=-Math.sin(elapsed*speed)*amp;l.leftArm.rotation.x=-Math.sin(elapsed*speed)*amp*.65;l.rightArm.rotation.x=Math.sin(elapsed*speed)*amp*.65;avatar.children[0].position.y=speed?.035*Math.abs(Math.sin(elapsed*speed)):0;}if(mixer)mixer.update(dt);last=now;controls.update();renderer.render(scene,camera)}requestAnimationFrame(frame);
 </script></body></html>
