@@ -1,19 +1,19 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Accra Vibes — Alpha 0.4</title>
+<title>Accra Vibes — Alpha 0.4.1</title>
 <style>
 *{box-sizing:border-box}body{margin:0;overflow:hidden;background:#a8d9ee;font-family:system-ui,sans-serif;color:#fff}canvas{display:block}
 #ui{position:fixed;top:14px;left:14px;width:min(295px,66vw);background:#142437e8;padding:14px;border-radius:15px;z-index:3;box-shadow:0 10px 30px #0003}h1{margin:0;color:#ffd24f;font-size:23px}small{color:#c6d5e2}#wallet{font-size:24px;font-weight:bold;margin:8px 0}#mission{font-size:13px;margin:8px 0}
 #buttons{display:grid;grid-template-columns:1fr 1fr;gap:5px}button{cursor:pointer;border:0;background:#ffd04c;border-radius:8px;padding:9px 5px;color:#182333;font-weight:750}button:active{filter:brightness(.88)}
 #message{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#18293fe8;border-radius:11px;padding:10px 14px;z-index:4;max-width:40vw;text-align:center;font-size:13px}
 #mini{position:fixed;top:15px;right:15px;width:145px;height:145px;background:#365c52;border:3px solid #fff8;border-radius:12px;z-index:2}
-#help{position:fixed;bottom:15px;left:15px;background:#172c40d9;padding:9px;border-radius:9px;font-size:12px;z-index:2}
+#help{position:fixed;bottom:15px;left:180px;background:#172c40d9;padding:9px;border-radius:9px;font-size:12px;z-index:2}
 #pad{position:fixed;right:16px;bottom:18px;z-index:5;display:grid;grid-template-columns:repeat(3,58px);gap:6px;touch-action:none;user-select:none}#pad button{height:58px;font-size:23px;background:#fffde;touch-action:none}#pad span{width:58px}#mobileAction{display:none}
-@media(min-width:850px){#joystick,#mobileDrive{display:none}}@media(max-width:849px){#joystick{display:block}#mobileAction,#mobileDrive{display:block;position:fixed;right:22px;z-index:5;background:#ffd04c;border-radius:50%;height:68px;width:68px}#mobileAction{bottom:122px}#mobileDrive{bottom:30px;background:#ffffffd9}#help{display:none}#ui{max-height:58vh;overflow:auto}}@media(max-width:560px){#ui{padding:9px;width:205px}h1{font-size:18px}#wallet{font-size:18px}#mini{width:105px;height:105px}#message{top:133px;max-width:90vw}#help{max-width:200px}}
+@media(min-width:850px){#joystick{display:block}}@media(max-width:849px){#joystick{display:block}#mobileAction,#mobileDrive{display:block;position:fixed;right:22px;z-index:5;background:#ffd04c;border-radius:50%;height:68px;width:68px}#mobileAction{bottom:122px}#mobileDrive{bottom:30px;background:#ffffffd9}#help{display:none}#ui{max-height:58vh;overflow:auto}}@media(max-width:560px){#ui{padding:9px;width:205px}h1{font-size:18px}#wallet{font-size:18px}#mini{width:105px;height:105px}#message{top:133px;max-width:90vw}#help{max-width:200px}}
 
-#joystick{display:none;position:fixed;left:20px;bottom:25px;width:136px;height:136px;border-radius:50%;background:#203b53a9;border:3px solid #ffffff8c;z-index:5;touch-action:none;user-select:none}#stick{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:#ffda69;border:3px solid #fff8;pointer-events:none}#mobileDrive{display:none}@media(max-width:849px){#joystick,#mobileDrive{display:block}}@media(max-width:849px) and (orientation:landscape){#joystick{bottom:10px;width:110px;height:110px}#stick{left:30px;top:30px;width:44px;height:44px}#mobileAction{bottom:95px}#mobileDrive{bottom:15px}#ui{max-height:75vh}}
+#joystick{display:block;position:fixed;left:20px;bottom:25px;width:136px;height:136px;border-radius:50%;background:#203b53a9;border:3px solid #ffffff8c;z-index:5;touch-action:none;user-select:none}#stick{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:#ffda69;border:3px solid #fff8;pointer-events:none}#mobileDrive{display:none}@media(max-width:849px){#joystick,#mobileDrive{display:block}}@media(max-width:849px) and (orientation:landscape){#joystick{bottom:10px;width:110px;height:110px}#stick{left:30px;top:30px;width:44px;height:44px}#mobileAction{bottom:95px}#mobileDrive{bottom:15px}#ui{max-height:75vh}}
 </style></head><body>
-<div id="ui"><h1>🇬🇭 ACCRA VIBES</h1><small>OSU · ALPHA 0.4</small><div id="wallet"></div><div id="mission"></div>
+<div id="ui"><h1>🇬🇭 ACCRA VIBES</h1><small>OSU · ALPHA 0.4.1</small><div id="wallet"></div><div id="mission"></div>
 <div id="buttons"><button id="act">Interact [E]</button><button id="car"></button><button id="home"></button><button id="kiosk"></button><button id="reset">Reset</button></div><small id="stats"></small></div>
 <div id="message">Welcome to Osu! Follow the orange pickup marker.</div><canvas id="mini" width="145" height="145"></canvas>
 <div id="help">W forward · S backward · A left · D right · E interact · F drive · Drag to rotate view · Autosaves locally</div>
