@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Accra Vibes — Alpha 0.8</title>
+<title>Accra Vibes — Alpha 0.9</title>
 <style>
 *{box-sizing:border-box}body{margin:0;overflow:hidden;background:#a8d9ee;font-family:system-ui,sans-serif;color:#fff}canvas{display:block}
 #ui{position:fixed;top:14px;left:14px;width:min(295px,66vw);background:#142437e8;padding:14px;border-radius:15px;z-index:3;box-shadow:0 10px 30px #0003}h1{margin:0;color:#ffd24f;font-size:23px}small{color:#c6d5e2}#wallet{font-size:24px;font-weight:bold;margin:8px 0}#mission{font-size:13px;margin:8px 0}
@@ -13,7 +13,7 @@
 
 #joystick{display:block;position:fixed;left:20px;bottom:25px;width:136px;height:136px;border-radius:50%;background:#203b53a9;border:3px solid #ffffff8c;z-index:5;touch-action:none;user-select:none}#stick{position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:#ffda69;border:3px solid #fff8;pointer-events:none}#mobileDrive{display:none}@media(max-width:849px){#joystick,#mobileDrive{display:block}}@media(max-width:849px) and (orientation:landscape){#joystick{bottom:10px;width:110px;height:110px}#stick{left:30px;top:30px;width:44px;height:44px}#mobileAction{bottom:95px}#mobileDrive{bottom:15px}#ui{max-height:75vh}}
 </style></head><body>
-<div id="ui"><h1>🇬🇭 ACCRA VIBES</h1><small>OSU · ALPHA 0.8</small><div id="wallet"></div><div id="mission"></div>
+<div id="ui"><h1>🇬🇭 ACCRA VIBES</h1><small>OSU · ALPHA 0.9</small><div id="wallet"></div><div id="mission"></div>
 <div id="buttons"><button id="act">Interact [E]</button><button id="car"></button><button id="home"></button><button id="kiosk"></button><button id="reset">Reset</button></div><small id="stats"></small></div>
 <button id="sceneToggle">🌙 Night</button><div id="speedometer">0 km/h</div><div id="message">Welcome to Osu! Follow the orange pickup marker.</div><canvas id="mini" width="145" height="145"></canvas>
 <div id="help">Walk: WASD · Drive: W accelerate, S reverse/brake, A/D steer · E interact · F drive · Drag camera · Autosaves locally</div>
@@ -38,9 +38,32 @@ for(let a=-70;a<=70;a+=35){for(const side of [-1,1]){cube(a+side*6,.055,0,1.8,.1
 for(let a=-70;a<=70;a+=35){cube(a,.01,0,10,.1,220,street);cube(0,.01,a,220,.1,10,street);
 for(let b=-100;b<100;b+=12){cube(a,.08,b,.25,.02,5,lane);cube(b,.08,a,5,.02,.25,lane)}}
 const solidBuildings=[];const facade=['#edb18c','#f1ca8b','#86b3b6','#dc989b','#e5dcc4'];
+// Distinct street elevations informed by reference photographs of Oxford Street, Osu.
+// These are original 3D interpretations, not photo projections or exact reconstructions.
+const shopNames=['PAPAYE INSPIRED CHOP','OSU FASHION','PHONE ACCESSORIES','COFFEE & CHILL','LOCAL ART','PHARMACY','SALON','PROVISIONS'];
+function facadeLabel(text,x,y,z,w){const c=document.createElement('canvas');c.width=512;c.height=128;const t=c.getContext('2d');t.fillStyle='#162c3b';t.fillRect(0,0,512,128);t.fillStyle='#ffe5a3';t.textAlign='center';t.font='bold 36px Arial';t.fillText(text,256,80,485);const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,1.6),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),side:THREE.DoubleSide}));mesh.position.set(x,y,z);scene.add(mesh)}
+let buildingIndex=0;
 for(let x=-92;x<=92;x+=16)for(let z=-92;z<=92;z+=16){if([-70,-35,0,35,70].some(a=>Math.abs(x-a)<12||Math.abs(z-a)<12))continue;
-let h=6+Math.abs(Math.sin(x*1.7+z*.9))*12;cube(x,h/2,z,10,h,10,material(facade[Math.abs(Math.round(x+z))%5]));solidBuildings.push({x,z,r:6.5});
-cube(x,h+.2,z,11,.5,11,material('#a35d4b'));for(let y=3;y<h;y+=3){for(let wx=-3;wx<=3;wx+=3){cube(x+wx,y,z+5.09,1.5,1.4,.13,glassMat);cube(x+wx,y,z-5.09,1.5,1.4,.13,glassMat)}}cube(x,1.55,z+5.15,2,3,.16,material('#61412d'));cube(x,3.2,z+5.65,9,.3,2,material('#a65745'))}
+const id=buildingIndex++,type=id%7,h=type===0?24:type===1?7:type===2?12:type===3?16:type===4?9:type===5?20:11;
+const w=type===0?12:type===3?9:10,d=type===1?12:10,front=z+d/2+.12;
+cube(x,h/2,z,w,h,d,material(facade[(id*3)%5]));solidBuildings.push({x,z,r:Math.max(w,d)/2+1});
+if(type===0){ // modern glazed office with corner fins
+cube(x,h+.25,z,w+1,.5,d+1,material('#f1ede2'));
+for(let y=3;y<h;y+=3)for(let q=-1;q<=1;q++){cube(x+q*3.2,y,front,2.5,2.15,.18,glassMat);cube(x+w/2+.06,y,z+q*3.2,.15,2.15,2.5,glassMat)}
+for(const q of [-1,1])cube(x+q*5.1,h/2,front,.28,h,.3,material('#eee5d2'));
+}else if(type===1){ // single-storey retail
+cube(x,h+.15,z,w+1,.45,d+1,material('#b74932'));cube(x,2.1,front,7,3.1,.18,glassMat);cube(x,4.2,front+.65,w+.8,.32,1.5,material('#f2bd4c'));facadeLabel(shopNames[id%8],x,5.3,front+.22,9);
+}else if(type===2){ // traditional low-rise with balconies
+cube(x,h+.2,z,w+1,.5,d+1,material('#b75e47'));for(let y=3;y<h;y+=3){cube(x,y,front,6,1.3,.15,glassMat);cube(x,y-.9,front+.8,8,.18,1.8,material('#d5b49a'));for(let q=-3;q<=3;q+=2)cube(x+q,y-.45,front+1.65,.12,.9,.12,material('#464c50'))}
+}else if(type===3){ // stepped residential building
+cube(x,h+.25,z,w+1,.45,d+1,material('#e8e0d3'));cube(x+1,h+2,z-1,5,3,7,material('#d9b7a5'));for(let y=3;y<h;y+=3)for(const q of [-2.5,2.5])cube(x+q,y,front,1.8,1.8,.14,glassMat);
+}else if(type===4){ // painted mixed-use storefront
+cube(x,h+.2,z,w+1,.45,d+1,material('#795449'));cube(x,2.2,front,8,3,.14,glassMat);facadeLabel(shopNames[id%8],x,5.1,front+.18,9);cube(x,6.8,front,7,1.2,.16,material('#f4c98b'));
+}else if(type===5){ // tall hotel
+cube(x,h+.3,z,w+1,.6,d+1,material('#ece2c6'));for(let y=3;y<h;y+=3){cube(x,y,front,8,1.7,.14,glassMat);cube(x,y-.85,front+.5,9,.15,1.1,material('#b9ad9d'))}facadeLabel('OSU HOTEL',x,h-1,front+.25,8);
+}else{ // compound style
+cube(x,h+.15,z,w+1,.45,d+1,material('#9b6652'));for(const q of [-3,0,3])cube(x+q,4,front,1.5,2,.14,glassMat);cube(x,1.55,front,2,3,.18,material('#75513c'))}
+}
 function sign(txt,x,z){const c=document.createElement('canvas');c.width=512;c.height=96;const ctx=c.getContext('2d');ctx.fillStyle='#13273c';ctx.fillRect(0,0,512,96);ctx.fillStyle='#ffd04c';ctx.font='bold 38px sans-serif';ctx.textAlign='center';ctx.fillText(txt,256,63);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c)}));s.position.set(x,7,z);s.scale.set(16,3,1);scene.add(s)}
 sign('OSU • OXFORD ST',0,-7);sign('CHOP BAR',-19,-19);sign('ACCRA VIBES KIOSK',52,17);sign('APARTMENTS',-53,17);sign('WELCOME TO OSU',0,53);sign('WAKEY WAKEY CHOP BAR',-52,-54);sign('ACCRA TAXI RANK',42,-53);
 const accents=['#d9a51e','#d33b35','#248a52','#ece5d2'];
@@ -53,7 +76,7 @@ const trunkMat=material('#795337'),leafMat=material('#267c49');
 for(let i=0;i<34;i++){let x=-99+(i%17)*12,z=i<17?95:-95;cube(x,1.6,z,.38,3.2,.38,trunkMat);const palm=new THREE.Mesh(new THREE.SphereGeometry(2.4,7,5),leafMat);palm.position.set(x,4,z);palm.castShadow=true;scene.add(palm)}
 for(let i=0;i<22;i++){const x=-96+(i%11)*19,z=i<11?43:-43;cube(x,3.5,z,.17,7,.17,material('#77818a'));cube(x,7,z,.9,.3,.35,material('#f7e9aa'))}
 for(let i=0;i<24;i++){let x=Math.sin(i*8)*97,z=Math.cos(i*13)*97;if([-70,-35,0,35,70].some(a=>Math.abs(x-a)<10||Math.abs(z-a)<10))continue;cube(x,1,z,.5,2,.5,material('#765239'));const crown=new THREE.Mesh(new THREE.SphereGeometry(2,9,7),material('#338250'));crown.position.set(x,3,z);scene.add(crown)}
-const pedestrians=[];for(let i=0;i<19;i++){const g=new THREE.Group(),body=new THREE.Mesh(new THREE.CylinderGeometry(.37,.44,1.2,8),material(['#c95043','#2b8ca6','#eeae37','#e0d4ae'][i%4])),head=new THREE.Mesh(new THREE.SphereGeometry(.32,9,8),material(['#784f31','#ad7750','#583d2e'][i%3]));body.position.y=1.1;head.position.y=1.98;g.add(body,head);scene.add(g);pedestrians.push({g,x:Math.sin(i*2.4)*83,z:Math.cos(i*3.5)*83,dir:i*.8,speed:.5+(i%4)*.25,phase:i*.8})}
+const pedestrians=[];for(let i=0;i<26;i++){const g=new THREE.Group(),body=new THREE.Mesh(new THREE.CylinderGeometry(.37,.44,1.2,8),material(['#c95043','#2b8ca6','#eeae37','#e0d4ae'][i%4])),head=new THREE.Mesh(new THREE.SphereGeometry(.32,9,8),material(['#784f31','#ad7750','#583d2e'][i%3]));body.position.y=1.1;head.position.y=1.98;g.add(body,head);const left=new THREE.Mesh(new THREE.CapsuleGeometry(.11,.55,4,6),material(['#86553c','#b17b56','#68422e'][i%3]));left.position.set(-.52,1.2,0);const right=left.clone();right.position.x=.52;g.add(left,right);const legs=[];for(const side of [-1,1]){const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.12,.6,4,6),material('#263953'));leg.position.set(side*.2,.4,0);g.add(leg);legs.push(leg)}scene.add(g);pedestrians.push({g,arms:[left,right],legs,x:Math.sin(i*2.4)*83,z:Math.cos(i*3.5)*83,dir:i*.8,speed:.5+(i%4)*.25,phase:i*.8,behavior:i%5,chatCooldown:0})}
 for(let i=0;i<10;i++){let x=(i%5-2)*35+8,z=(i<5?-35:35)+8;cube(x,.8,z,2,1.1,3.5,material(['#efcc4c','#dbddd5','#b45045'][i%3]));cube(x,1.55,z,1.7,.6,2,material('#41667a'))}
 const traffic=[];
 for(let i=0;i<12;i++){const van=i%3===0,g=new THREE.Group(),paint=material(van?'#f1d44c':i%2?'#efc849':'#e9e8df');
@@ -78,7 +101,7 @@ let driving=false,carSpeed=0,carHeading=0;const markers=[{x:-19,z:-19,col:'#ff9f
 const $=id=>document.getElementById(id),save=()=>localStorage.setItem('av-alpha-02',JSON.stringify(state));
 function notice(s){$('message').textContent=s}function renderHud(){$('wallet').textContent='GH₵ '+state.cash.toLocaleString();$('mission').textContent=state.mission===0?'MISSION: Collect food at orange marker.':'MISSION: Deliver food to green marker.';$('car').textContent=state.car?'Drive / Walk':'Buy car ₵500';$('home').textContent=state.home?'Home ✓':'Rent ₵300';$('kiosk').textContent=state.kiosk?'Kiosk ✓':'Kiosk ₵900';$('stats').textContent='Deliveries: '+state.deliveries+' • Saved locally';markers.forEach((p,i)=>p.obj.visible=i===state.mission)}
 function buy(k,cost){if(state[k])return notice('Already owned.');if(state.cash<cost)return notice('Not enough money. Complete some deliveries.');state.cash-=cost;state[k]=true;save();renderHud();notice('Purchased '+k+'!')}
-function interact(){const t=markers[state.mission];if(Math.hypot(state.x-t.x,state.z-t.z)>8)return notice('Get closer to the mission marker.');if(state.mission===0){state.mission=1;notice('Order collected! Deliver to green marker.')}else{state.mission=0;state.cash+=75;state.deliveries++;notice('Delivery complete! +GH₵75')}save();renderHud()}
+function interact(){if(!driving){let near=null,dist=4;for(const p of pedestrians){const d=Math.hypot(state.x-p.x,state.z-p.z);if(d<dist){dist=d;near=p}}if(near){near.chatCooldown=8;near.dir=Math.atan2(state.x-near.x,state.z-near.z);const lines=['Chale, how far? Welcome to Osu!','You dey go Oxford Street? Plenty things dey there.','Good afternoon! How the hustle?','Ei, Accra traffic no be small!','You for try the waakye around here.','Medaase! Enjoy your day.'];return notice(lines[Math.floor(Math.random()*lines.length)])}}const t=markers[state.mission];if(Math.hypot(state.x-t.x,state.z-t.z)>8)return notice('Get closer to the mission marker.');if(state.mission===0){state.mission=1;notice('Order collected! Deliver to green marker.')}else{state.mission=0;state.cash+=75;state.deliveries++;notice('Delivery complete! +GH₵75')}save();renderHud()}
 $('act').onclick=interact;$('mobileAction').onclick=interact;$('car').onclick=()=>state.car?(driving=!driving,notice(driving?'Driving: forward accelerates, left/right steers':'Walking mode')):buy('car',500);$('home').onclick=()=>buy('home',300);$('kiosk').onclick=()=>buy('kiosk',900);$('reset').onclick=()=>{if(confirm('Reset this game save?')){localStorage.removeItem('av-alpha-02');location.reload()}};
 const joystick={x:0,y:0,active:false},joyEl=$('joystick'),stick=$('stick');let joyPointer=null;
 function setJoy(e){const r=joyEl.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,max=r.width*.36;let x=e.clientX-cx,y=e.clientY-cy;const d=Math.hypot(x,y);if(d>max){x=x/d*max;y=y/d*max}joystick.x=x/max;joystick.y=y/max;stick.style.transform='translate('+x+'px,'+y+'px)'}
@@ -98,7 +121,7 @@ for(const b of solidBuildings){const ax=state.x-b.x,az=state.z-b.z;if(Math.abs(a
 walkPhase+=(driving?0:Math.hypot(dx,dz)*dt*10);for(const limb of limbs){limb.mesh.rotation.x=driving?0:Math.sin(walkPhase)*.5*limb.side*(limb.type==='arm'?-1:1)}
 player.position.set(state.x,0,state.z);player.visible=!driving;document.getElementById('speedometer').style.display=driving?'block':'none';if(driving)document.getElementById('speedometer').textContent=Math.round(Math.abs(carSpeed)*5)+' km/h';vehicle.position.set(state.x,0,state.z);vehicle.visible=driving;
 for(const t of traffic){t.t+=t.speed*dt;if(t.t>108)t.t=-108;if(t.axis===0){t.g.position.set(t.road+t.side*2.5,0,t.t);t.g.rotation.y=0}else{t.g.position.set(t.t,0,t.road+t.side*2.5);t.g.rotation.y=Math.PI/2}}
-for(let p of pedestrians){p.x+=Math.sin(p.dir)*p.speed*dt;p.z+=Math.cos(p.dir)*p.speed*dt;if(Math.abs(p.x)>95||Math.abs(p.z)>95)p.dir+=Math.PI;p.g.position.set(p.x,0,p.z);p.g.rotation.y=p.dir;p.g.position.y=.055*Math.sin(now*.006+p.phase)}
+for(let p of pedestrians){p.chatCooldown=Math.max(0,p.chatCooldown-dt);const walking=p.chatCooldown===0&&p.behavior!==4;const speed=walking?p.speed:0;p.x+=Math.sin(p.dir)*speed*dt;p.z+=Math.cos(p.dir)*speed*dt;for(let k=0;k<2;k++){p.legs[k].rotation.x=walking?Math.sin(now*.005+p.phase)*.55*(k?1:-1):0;p.arms[k].rotation.x=walking?Math.sin(now*.005+p.phase)*.45*(k?-1:1):p.chatCooldown>0?-.3:0}if(p.behavior===3&&Math.sin(now*.0007+p.phase)>.97)p.dir+=dt*.6;if(Math.abs(p.x)>95||Math.abs(p.z)>95)p.dir+=Math.PI;p.g.position.set(p.x,0,p.z);p.g.rotation.y=p.dir;p.g.position.y=.055*Math.sin(now*.006+p.phase)}
 const target=new THREE.Vector3(state.x+(driving?21:13)*Math.sin(orbit),driving?10:7,state.z+(driving?21:13)*Math.cos(orbit));camera.position.lerp(target,.11);camera.lookAt(state.x,1.4,state.z);markers.forEach((p,i)=>p.obj.position.set(p.x,.3+.12*Math.sin(now*.003+i),p.z));
 const c=$('mini'),ctx=c.getContext('2d');ctx.clearRect(0,0,145,145);ctx.fillStyle='#578363';ctx.fillRect(0,0,145,145);ctx.strokeStyle='#b8b49f';ctx.lineWidth=6;for(let a=-70;a<=70;a+=35){const v=(a+105)/210*145;ctx.beginPath();ctx.moveTo(v,0);ctx.lineTo(v,145);ctx.moveTo(0,v);ctx.lineTo(145,v);ctx.stroke()}for(const p of markers){ctx.fillStyle=p.col;ctx.beginPath();ctx.arc((p.x+105)/210*145,(p.z+105)/210*145,5,0,7);ctx.fill()}ctx.fillStyle='#fff';ctx.beginPath();ctx.arc((state.x+105)/210*145,(state.z+105)/210*145,4,0,7);ctx.fill();
 persist+=dt;if(persist>3){save();persist=0}renderer.render(scene,camera)}
